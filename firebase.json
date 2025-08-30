@@ -1,0 +1,41 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8082,
+      "rules": "firestore.rules.dev"
+    },
+    "storage": {
+      "port": 9199,
+      "rules": "storage.rules.dev"
+    },
+    "functions": {
+      "port": 5003
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}

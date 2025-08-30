@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow uploads without authentication for simplified app
+    match /uploads/{allPaths=**} {
+      // Allow read/write access for all uploads
+      allow read, write: if true;
+      
+      // Additional validation for uploads
+      allow create: if validateUpload();
+      
+      allow delete: if true;
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// Validation function for file uploads
+function validateUpload() {
+  // Validate file size (max 10MB) and content type
+  return request.resource.size < 10 * 1024 * 1024
+    && request.resource.contentType != null
+    && request.resource.contentType.matches('image/.*');
+}

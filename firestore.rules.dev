@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Top-level images collection - accessible without authentication
+    // Since we removed auth, allow public read/write access to images
+    match /images/{imageId} {
+      allow read, write: if true;
+      
+      // Validate image document structure
+      allow create: if validateImageDoc(request.resource.data);
+      allow update: if validateImageUpdate(resource.data, request.resource.data);
+    }
+    
+    // Legacy user-specific paths (kept for backward compatibility)
+    match /users/{userId} {
+      // Allow read/write access to user documents
+      allow read, write: if true;
+      
+      // User's images collection
+      match /images/{imageId} {
+        allow read, write: if true;
+        
+        // Validate image document structure
+        allow create: if validateImageDoc(request.resource.data);
+        allow update: if validateImageUpdate(resource.data, request.resource.data);
+      }
+      
+      // User's settings collection
+      match /settings/{document} {
+        allow read, write: if true;
+      }
+    }
+    
+    // Allow access to all other collections for now
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// Validation functions for image documents
+function validateImageDoc(data) {
+  return data.keys().hasAll(['filename', 'storagePath', 'downloadURL', 'status', 'candidates', 'createdAt', 'updatedAt'])
+    && data.filename is string
+    && data.storagePath is string
+    && data.downloadURL is string
+    && data.status in ['pending', 'processing', 'complete', 'error']
+    && data.candidates is list
+    && data.createdAt is number
+    && data.updatedAt is number
+    && (data.selectedIndex == null || data.selectedIndex is number)
+    && (!data.keys().hasAll(['selectedTextOverride']) || data.selectedTextOverride is string)
+    && (!data.keys().hasAll(['error']) || data.error is string);
+}
+
+function validateImageUpdate(existingData, newData) {
+  // Allow updates to specific fields only
+  let allowedFields = ['status', 'candidates', 'selectedIndex', 'selectedTextOverride', 'updatedAt', 'error'];
+  let changedFields = newData.diff(existingData).changedKeys();
+  
+  return changedFields.hasOnly(allowedFields)
+    && newData.updatedAt is number
+    && newData.updatedAt > existingData.updatedAt;
+}

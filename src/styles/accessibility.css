@@ -1,0 +1,322 @@
+/* Accessibility-specific styles */
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  /* Ensure sufficient contrast for interactive elements */
+  button, 
+  input, 
+  select, 
+  textarea,
+  [role="button"] {
+    border: 2px solid !important;
+    background-color: transparent !important;
+  }
+  
+  /* Ensure focus indicators are visible */
+  *:focus,
+  *:focus-visible {
+    outline: 3px solid #000 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 1px #fff, 0 0 0 4px #000 !important;
+  }
+  
+  /* Ensure text has sufficient contrast */
+  .text-gray-400,
+  .text-gray-500,
+  .text-gray-600 {
+    color: #000 !important;
+  }
+  
+  /* Status indicators need high contrast */
+  .bg-green-400\/10,
+  .bg-blue-400\/10,
+  .bg-yellow-400\/10,
+  .bg-red-400\/10 {
+    background-color: transparent !important;
+    border: 2px solid currentColor !important;
+  }
+  
+  /* Ensure modal overlays are visible */
+  .bg-black\/50,
+  .bg-black\/80 {
+    background-color: rgba(0, 0, 0, 0.9) !important;
+  }
+  
+  /* Dark mode adjustments for high contrast */
+  @media (prefers-color-scheme: dark) {
+    .text-gray-400,
+    .text-gray-500,
+    .text-gray-600 {
+      color: #fff !important;
+    }
+    
+    *:focus,
+    *:focus-visible {
+      outline: 3px solid #fff !important;
+      box-shadow: 0 0 0 1px #000, 0 0 0 4px #fff !important;
+    }
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Keep essential loading animations but make them less distracting */
+  .animate-spin {
+    animation: spin 2s linear infinite;
+  }
+}
+
+/* Focus management for modals and overlays */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+}
+
+/* Ensure keyboard navigation is visible */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Skip links for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px 12px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 4px;
+  font-weight: 500;
+  border: 2px solid #3b82f6;
+  transition: all 0.2s ease;
+}
+
+.skip-link:focus,
+.skip-link.focus\:top-6:focus {
+  top: 6px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+.skip-link + .skip-link {
+  left: 140px;
+}
+
+.skip-link + .skip-link + .skip-link {
+  left: 260px;
+}
+
+/* Ensure interactive elements have minimum touch target size */
+button,
+input,
+select,
+textarea,
+[role="button"],
+[role="checkbox"],
+[role="radio"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception for small icon buttons that are grouped */
+.icon-button-small {
+  min-height: 32px;
+  min-width: 32px;
+}
+
+/* Ensure sufficient spacing between interactive elements */
+button + button,
+input + button,
+[role="button"] + [role="button"] {
+  margin-left: 8px;
+}
+
+/* Status and live region styling */
+[aria-live] {
+  /* Ensure live regions are positioned but not visually intrusive */
+  position: relative;
+}
+
+/* Progress bar accessibility */
+[role="progressbar"] {
+  position: relative;
+}
+
+[role="progressbar"]::after {
+  content: attr(aria-valuenow) "% complete";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* Ensure error messages are clearly visible */
+[role="alert"] {
+  border-left: 4px solid #ef4444;
+  padding-left: 12px;
+}
+
+/* Form field error states */
+input:invalid,
+textarea:invalid,
+select:invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+/* Ensure disabled elements are clearly indicated */
+:disabled,
+[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Tooltip and help text positioning */
+[aria-describedby] + [role="tooltip"],
+[aria-describedby] + .tooltip {
+  position: absolute;
+  z-index: 10;
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  max-width: 200px;
+}
+
+/* Grid navigation enhancements */
+[role="grid"] {
+  position: relative;
+}
+
+[role="grid"]:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+[role="gridcell"] {
+  position: relative;
+}
+
+[role="gridcell"]:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Enhanced focus indicators for interactive elements */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Status announcements styling */
+[aria-live] {
+  position: relative;
+}
+
+/* Ensure live regions are not visually intrusive but accessible */
+[aria-live="polite"],
+[aria-live="assertive"] {
+  clip: unset;
+  width: auto;
+  height: auto;
+}
+
+/* Progress indicators accessibility */
+[role="progressbar"] {
+  position: relative;
+  min-height: 20px;
+}
+
+/* Ensure modal focus trapping is visible */
+.modal-overlay [tabindex="0"]:focus,
+.modal-overlay button:focus,
+.modal-overlay input:focus,
+.modal-overlay textarea:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Enhanced error state visibility */
+[aria-invalid="true"],
+.error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+/* Ensure sufficient color contrast for status badges */
+.text-yellow-400,
+.text-blue-400,
+.text-green-400,
+.text-red-400 {
+  font-weight: 500;
+}
+
+/* Loading state accessibility */
+.animate-spin {
+  /* Ensure loading indicators are announced to screen readers */
+  speak: none;
+}
+
+.animate-spin + span,
+.animate-spin + .sr-only {
+  speak: normal;
+}
+
+/* Keyboard navigation hints */
+.keyboard-hint {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+*:focus + .keyboard-hint,
+*:focus-within .keyboard-hint {
+  opacity: 1;
+}
