@@ -13,18 +13,27 @@ const app = (0, express_1.default)();
 app.set('trust proxy', true);
 // CORS configuration
 const corsOptions = {
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://localhost:3000',
-        'https://localhost:5173',
-        /\.github\.io$/,
-        /\.web\.app$/,
-        /\.firebaseapp\.com$/
-    ],
+    origin: process.env.NODE_ENV === 'production'
+        ? [
+            'https://lora-dataset-builder.github.io',
+            'https://your-custom-domain.com', // Replace with actual custom domain
+            /^https:\/\/.*\.github\.io$/,
+            /^https:\/\/.*\.web\.app$/,
+            /^https:\/\/.*\.firebaseapp\.com$/
+        ]
+        : [
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'https://localhost:3000',
+            'https://localhost:5173',
+            /\.github\.io$/,
+            /\.web\.app$/,
+            /\.firebaseapp\.com$/
+        ],
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-ID', 'X-Request-ID']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-ID', 'X-Request-ID'],
+    maxAge: 86400 // Cache preflight for 24 hours in production
 };
 app.use((0, cors_1.default)(corsOptions));
 // Body parsing middleware

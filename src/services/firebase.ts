@@ -2,7 +2,18 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
-const firebaseConfig = {
+// Production Firebase configuration
+const productionConfig = {
+  apiKey: "AIzaSyAfWv4Jjjv0ghvn6av4FmZ_Y5kjxCYuwho",
+  authDomain: "lora-dataset-builder-prod.firebaseapp.com",
+  projectId: "lora-dataset-builder-prod",
+  storageBucket: "lora-dataset-builder-prod.firebasestorage.app",
+  messagingSenderId: "524055956982",
+  appId: "1:524055956982:web:526363bdb84f39f2780bd7"
+};
+
+// Development Firebase configuration (from environment variables)
+const developmentConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -11,6 +22,9 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Use production config in production, development config in development
+const firebaseConfig = import.meta.env.PROD ? productionConfig : developmentConfig;
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
@@ -18,7 +32,7 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// Connect to emulators in development
+// Connect to emulators in development only
 if (import.meta.env.DEV) {
   let emulatorsConnected = false;
   
@@ -53,4 +67,6 @@ if (import.meta.env.DEV) {
   if (!emulatorsConnected) {
     console.warn('⚠️ Running without emulators - this will connect to production Firebase!');
   }
+} else {
+  console.log('🚀 Connected to production Firebase');
 }

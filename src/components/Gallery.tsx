@@ -54,7 +54,7 @@ export function Gallery({
   }, []);
 
   // Debug logging
-  console.log('Gallery component - images:', images.length, 'loading:', loading, 'error:', error);
+
 
   // Use external batch selection state if provided, otherwise use internal state
   const [internalSelectedImageIds, setInternalSelectedImageIds] = useState<string[]>([]);

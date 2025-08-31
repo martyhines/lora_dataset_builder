@@ -9,16 +9,19 @@ const v2_1 = require("firebase-functions/v2");
 const app_1 = __importDefault(require("./app"));
 // Set global options for all functions
 (0, v2_1.setGlobalOptions)({
-    maxInstances: 10,
+    maxInstances: process.env.NODE_ENV === 'production' ? 50 : 10,
     region: 'us-central1',
-    memory: '512MiB',
-    timeoutSeconds: 60
+    memory: '1GiB',
+    timeoutSeconds: 120
 });
 // Export the Express app as a Cloud Function
 exports.captionProxy = (0, https_1.onRequest)({
-    cors: true,
+    cors: process.env.NODE_ENV === 'production'
+        ? ['https://martyhines.github.io', 'https://lora-dataset-builder.github.io']
+        : true,
     enforceAppCheck: false, // Set to true if using App Check
-    invoker: 'public' // Allow public access, but rate limited
+    invoker: 'public', // Allow public access, but rate limited
+    concurrency: process.env.NODE_ENV === 'production' ? 100 : 10
 }, app_1.default);
 // Export individual functions for testing
 var app_2 = require("./app");

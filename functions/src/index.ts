@@ -13,12 +13,9 @@ setGlobalOptions({
 // Export the Express app as a Cloud Function
 export const captionProxy = onRequest(
   {
-    cors: {
-      origin: process.env.NODE_ENV === 'production' 
-        ? ['https://lora-dataset-builder.github.io', 'https://your-custom-domain.com']
-        : true,
-      credentials: true
-    },
+    cors: process.env.NODE_ENV === 'production' 
+      ? ['https://martyhines.github.io', 'https://lora-dataset-builder.github.io']
+      : true,
     enforceAppCheck: false, // Set to true if using App Check
     invoker: 'public', // Allow public access, but rate limited
     concurrency: process.env.NODE_ENV === 'production' ? 100 : 10

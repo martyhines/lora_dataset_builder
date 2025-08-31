@@ -345,14 +345,14 @@ function AppContent() {
               <span className="text-slate-300 font-semibold">LoRa Dataset Builder</span>
             </div>
             <p className="text-slate-400 text-sm mb-2">
-              Professional image management and AI-powered caption generation for machine learning datasets
+              Professional image management and AI-powered caption generation for machine learning datasets by Marty Hines
             </p>
             <div className="flex items-center justify-center space-x-4 text-xs text-slate-500">
-              <span>Built with React</span>
+              {/* <span>Built with React</span>
               <span>•</span>
               <span>Powered by Firebase</span>
               <span>•</span>
-              <span>Modern Web Technologies</span>
+              <span>Modern Web Technologies</span> */}
             </div>
           </div>
         </div>

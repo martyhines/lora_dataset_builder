@@ -48,7 +48,7 @@ export function VirtualizedGallery({
     sampleRate: 0.2,
     onMetrics: (metrics) => {
       if (metrics.renderTime > 50) {
-        console.log(`Virtualized gallery render: ${metrics.renderTime.toFixed(2)}ms for ${metrics.imageCount} visible items`);
+    
       }
     }
   });
