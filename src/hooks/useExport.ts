@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { ImageDoc, DatasetEntry } from '../types';
 import { ExportService } from '../services/exportService';
 import type { ExportProgress } from '../services/exportService';
@@ -12,20 +12,18 @@ export function useExport(images: ImageDoc[]) {
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
   const [showDownloadButton, setShowDownloadButton] = useState(false);
 
-  // Initialize download button visibility from localStorage
-  useEffect(() => {
-    setShowDownloadButton(ExportService.shouldShowDownloadButton());
-  }, []);
-
-  // Get dataset statistics - with safety check for images array
-  const stats = images && Array.isArray(images) 
-    ? ExportService.getDatasetStats(images)
-    : {
+  // Get dataset statistics - memoized to prevent infinite re-renders
+  const stats = useMemo(() => {
+    if (!images || !Array.isArray(images)) {
+      return {
         totalImages: 0,
         imagesWithCaptions: 0,
         imagesWithOverrides: 0,
         readyForExport: 0
       };
+    }
+    return ExportService.getDatasetStats(images);
+  }, [images]);
 
   /**
    * Export dataset with progress tracking
@@ -69,7 +67,6 @@ export function useExport(images: ImageDoc[]) {
   const toggleDownloadButton = useCallback((visible?: boolean) => {
     const newVisibility = visible !== undefined ? visible : !showDownloadButton;
     setShowDownloadButton(newVisibility);
-    ExportService.setDownloadButtonVisibility(newVisibility);
   }, [showDownloadButton]);
 
   /**
@@ -79,6 +76,15 @@ export function useExport(images: ImageDoc[]) {
     if (!images || !Array.isArray(images)) return [];
     return ExportService.generateDataset(images);
   }, [images]);
+
+  // Memoize computed values to prevent unnecessary re-renders
+  const canExport = useMemo(() => stats.readyForExport > 0, [stats.readyForExport]);
+  const exportButtonText = useMemo(() => {
+    if (isExporting) {
+      return `Exporting... (${exportProgress?.processed || 0}/${exportProgress?.total || 0})`;
+    }
+    return `Export Dataset (${stats.readyForExport})`;
+  }, [isExporting, exportProgress?.processed, exportProgress?.total, stats.readyForExport]);
 
   return {
     // State
@@ -93,9 +99,7 @@ export function useExport(images: ImageDoc[]) {
     generateDatasetPreview,
 
     // Computed values
-    canExport: stats.readyForExport > 0,
-    exportButtonText: isExporting 
-      ? `Exporting... (${exportProgress?.processed || 0}/${exportProgress?.total || 0})`
-      : `Export Dataset (${stats.readyForExport})`
+    canExport,
+    exportButtonText
   };
 }

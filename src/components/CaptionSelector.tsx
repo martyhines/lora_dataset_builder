@@ -118,7 +118,7 @@ export function CaptionSelector({
             {/* Provider Header */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <input
+                {/* <input
                   type="radio"
                   id={`caption-${index}`}
                   name={`${groupId.current}-selection`}
@@ -127,7 +127,7 @@ export function CaptionSelector({
                   className="text-blue-500 focus:ring-blue-500 focus:ring-2"
                   aria-describedby={`caption-text-${index} caption-meta-${index}`}
                   disabled={!!candidate.error}
-                />
+                /> */}
                 <label 
                   htmlFor={`caption-${index}`}
                   className="text-sm font-medium text-gray-300 cursor-pointer"

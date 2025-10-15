@@ -36,7 +36,7 @@ router.post(
         // Map short names to full provider IDs
         const providerMap: { [key: string]: string } = {
           'openai': 'openai:gpt-4o-mini',
-          'gemini': 'google:gemini-1.5-flash'
+          'gemini': 'google:gemini-2.0-flash'
         };
 
         providerIds = providers.split(',').map(p => {
@@ -75,7 +75,7 @@ router.post(
       // Map provider parameter to full provider ID
       const providerMap: { [key: string]: string } = {
         'openai': 'openai:gpt-4o-mini',
-        'gemini': 'google:gemini-1.5-flash'
+        'gemini': 'google:gemini-2.0-flash'
       };
 
       const providerId = providerMap[provider];

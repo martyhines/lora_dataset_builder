@@ -10,8 +10,13 @@ class ProviderRegistry {
         this.initializeProviders();
     }
     initializeProviders() {
-        // Initialize OpenAI provider if API key is available
+        // Read API keys from environment variables
         const openaiKey = process.env.OPENAI_API_KEY;
+        const geminiKey = process.env.GEMINI_API_KEY;
+        console.log('ProviderRegistry: Initializing providers');
+        console.log('ProviderRegistry: OpenAI key available:', !!openaiKey);
+        console.log('ProviderRegistry: Gemini key available:', !!geminiKey);
+        // Initialize OpenAI provider if API key is available
         if (openaiKey) {
             const openaiProvider = new openai_1.OpenAIProvider(openaiKey, 30000, 3);
             this.providers.set(openaiProvider.id, openaiProvider);
@@ -21,9 +26,9 @@ class ProviderRegistry {
                 timeout: 30000,
                 maxRetries: 3
             });
+            console.log('ProviderRegistry: OpenAI provider initialized');
         }
         // Initialize Gemini provider if API key is available
-        const geminiKey = process.env.GEMINI_API_KEY;
         if (geminiKey) {
             const geminiProvider = new gemini_1.GeminiProvider(geminiKey, 30000, 3);
             this.providers.set(geminiProvider.id, geminiProvider);
@@ -33,7 +38,9 @@ class ProviderRegistry {
                 timeout: 30000,
                 maxRetries: 3
             });
+            console.log('ProviderRegistry: Gemini provider initialized');
         }
+        console.log('ProviderRegistry: Available providers:', this.getAvailableProviders());
     }
     getProvider(providerId) {
         return this.providers.get(providerId);

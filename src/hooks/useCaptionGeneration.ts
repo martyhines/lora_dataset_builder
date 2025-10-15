@@ -45,7 +45,16 @@ export function useCaptionGeneration() {
       startCaptionGeneration(imageId);
 
       // First, get the image document to get the download URL
-      const imageDoc = await ImageService.getImageById(imageId);
+      // We need to get the current user to find the image in the user-specific collection
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser?.uid) {
+        throw new Error('User not authenticated');
+      }
+      
+      const imageDoc = await ImageService.getImageById(imageId, currentUser.uid);
       if (!imageDoc) {
         throw new Error('Image not found');
       }
@@ -117,7 +126,7 @@ export function useCaptionGeneration() {
         }));
       }
 
-      await ImageService.updateImageCandidates(imageId, candidates);
+      await ImageService.updateImageCandidates(imageId, candidates, currentUser.uid);
       
       endCaptionGeneration(imageId, true);
       

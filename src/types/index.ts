@@ -27,7 +27,7 @@
  * ```
  */
 export interface CaptionCandidate {
-  /** Unique identifier for the AI model (e.g., "openai:gpt-4o-mini", "gemini:gemini-1.5-flash") */
+  /** Unique identifier for the AI model (e.g., "openai:gpt-4o-mini", "gemini:gemini-2.0-flash") */
   modelId: string;
   /** The generated caption text */
   caption: string;
@@ -84,6 +84,8 @@ export interface ImageDoc {
   selectedIndex: number | null;
   /** User's custom text override for the selected caption */
   selectedTextOverride?: string;
+  /** User ID who owns this image (for authentication) */
+  userId?: string;
   /** Timestamp when the image was uploaded (epoch milliseconds) */
   createdAt: number;
   /** Timestamp when the image was last updated (epoch milliseconds) */

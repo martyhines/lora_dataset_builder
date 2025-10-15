@@ -36,21 +36,18 @@ export class ExportService {
         });
       }
 
-      // Skip images without selected captions
-      const caption = this.getSelectedCaption(image);
-      if (!caption) {
-        processed++;
-        continue;
+      // Get all available captions for this image
+      const captions = this.getAllCaptions(image);
+      
+      // Create dataset entries for each caption
+      for (const caption of captions) {
+        const entry: DatasetEntry = {
+          url: image.downloadURL,
+          filename: image.filename,
+          caption: caption
+        };
+        dataset.push(entry);
       }
-
-      // Create dataset entry
-      const entry: DatasetEntry = {
-        url: image.downloadURL,
-        filename: image.filename,
-        caption: caption
-      };
-
-      dataset.push(entry);
       processed++;
     }
 
@@ -67,22 +64,29 @@ export class ExportService {
   }
 
   /**
-   * Get the selected caption for an image
-   * Uses selectedTextOverride if available, otherwise the selected caption
+   * Get all available captions for an image
+   * Includes AI-generated captions and manual overrides
    * Requirements: 5.3
    */
-  private static getSelectedCaption(image: ImageDoc): string | null {
-    // Use override text if available
+  private static getAllCaptions(image: ImageDoc): string[] {
+    const captions: string[] = [];
+
+    // Add manual override caption if available
     if (image.selectedTextOverride?.trim()) {
-      return image.selectedTextOverride.trim();
+      captions.push(image.selectedTextOverride.trim());
     }
 
-    // Use selected caption if available
-    if (image.selectedIndex !== null && image.candidates[image.selectedIndex]) {
-      return image.candidates[image.selectedIndex].caption;
+    // Add all AI-generated captions
+    if (image.candidates && image.candidates.length > 0) {
+      for (const candidate of image.candidates) {
+        if (candidate.caption && candidate.caption.trim()) {
+          captions.push(candidate.caption.trim());
+        }
+      }
     }
 
-    return null;
+    // If no captions found, return empty array
+    return captions;
   }
 
   /**
@@ -152,7 +156,8 @@ export class ExportService {
     let readyForExport = 0;
 
     for (const image of images) {
-      const hasCaption = this.getSelectedCaption(image) !== null;
+      // Check if image has any captions (AI-generated or manual)
+      const hasCaption = (image.candidates && image.candidates.length > 0) || Boolean(image.selectedTextOverride?.trim());
       const hasOverride = Boolean(image.selectedTextOverride?.trim());
 
       if (hasCaption) {

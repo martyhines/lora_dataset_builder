@@ -1,51 +1,77 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { ImageDoc } from '../types';
-import { useExport } from '../hooks/useExport';
 import { generateId, FocusManager, announceToScreenReader } from '../utils/accessibility';
+import { ExportService } from '../services/exportService';
 
 export interface ExportButtonProps {
   images: ImageDoc[];
   className?: string;
   disabled?: boolean;
+  showDownloadButton: boolean;
 }
 
 /**
  * Export button component with progress indication and localStorage gating
  * Requirements: 5.1, 5.4, 5.5, 5.6
  */
-export function ExportButton({ images, className = '', disabled = false }: ExportButtonProps) {
+export function ExportButton({ 
+  images, 
+  className = '', 
+  disabled = false, 
+  showDownloadButton
+}: ExportButtonProps) {
   const [showPreview, setShowPreview] = useState(false);
-  const { 
-    isExporting, 
-    exportProgress, 
-    showDownloadButton, 
-    stats, 
-    exportDataset, 
-    generateDatasetPreview,
-    canExport,
-    exportButtonText
-  } = useExport(images);
-  
-  // Accessibility refs
-  const progressModalRef = useRef<HTMLDivElement>(null);
-  const previewModalRef = useRef<HTMLDivElement>(null);
-  const progressModalId = useRef(generateId('export-progress'));
-  const previewModalId = useRef(generateId('export-preview'));
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<any>(null);
 
   // Don't render if localStorage gate is not enabled
   if (!showDownloadButton) {
     return null;
   }
 
+  // Get stats for display
+  const stats = images && Array.isArray(images) 
+    ? ExportService.getDatasetStats(images)
+    : {
+        totalImages: 0,
+        imagesWithCaptions: 0,
+        imagesWithOverrides: 0,
+        readyForExport: 0
+      };
+
+  const canExport = stats.readyForExport > 0;
+  const exportButtonText = isExporting 
+    ? `Exporting... (${exportProgress?.processed || 0}/${exportProgress?.total || 0})`
+    : `Export Dataset (${stats.readyForExport})`;
+
   const handleExport = async () => {
+    if (isExporting || !images || !Array.isArray(images)) return;
+
+    setIsExporting(true);
+    setExportProgress({ processed: 0, total: images.length });
+
     try {
-      announceToScreenReader('Starting dataset export');
-      await exportDataset();
-      announceToScreenReader('Dataset export completed successfully');
+      // Generate dataset with progress tracking
+      const dataset = ExportService.generateDataset(images, (progress) => {
+        setExportProgress(progress);
+      });
+
+      // Small delay to show final progress
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Download the dataset
+      ExportService.downloadDataset(dataset);
+
+      // Reset progress after successful export
+      setTimeout(() => {
+        setExportProgress(null);
+      }, 1000);
+
     } catch (error) {
       console.error('Export failed:', error);
       announceToScreenReader('Dataset export failed', 'assertive');
-      // Error handling could be enhanced with toast notifications
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -53,7 +79,18 @@ export function ExportButton({ images, className = '', disabled = false }: Expor
     setShowPreview(true);
   };
 
+  const generateDatasetPreview = () => {
+    if (!images || !Array.isArray(images)) return [];
+    return ExportService.generateDataset(images);
+  };
+
   const previewData = showPreview ? generateDatasetPreview() : [];
+
+  // Accessibility refs
+  const progressModalRef = useRef<HTMLDivElement>(null);
+  const previewModalRef = useRef<HTMLDivElement>(null);
+  const progressModalId = useRef(generateId('export-progress'));
+  const previewModalId = useRef(generateId('export-preview'));
 
   // Focus management for modals
   useEffect(() => {

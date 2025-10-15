@@ -6,7 +6,7 @@ const base_1 = require("./base");
 class GeminiProvider extends base_1.BaseVisionProvider {
     constructor(apiKey, timeout, maxRetries) {
         super(timeout, maxRetries);
-        this.id = 'google:gemini-1.5-flash';
+        this.id = 'google:gemini-2.0-flash';
         if (!apiKey) {
             throw this.createError('Google Gemini API key is required', 500);
         }
@@ -28,7 +28,7 @@ class GeminiProvider extends base_1.BaseVisionProvider {
                 if (!mimeType.startsWith('image/')) {
                     throw this.createError('URL does not point to a valid image', 400);
                 }
-                const model = this.client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+                const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash' });
                 const prompt = options.systemPrompt || 'Describe this image in detail for a machine learning dataset. Focus on the main subject, setting, colors, and any notable features. Keep the description concise but informative.';
                 const imagePart = {
                     inlineData: {

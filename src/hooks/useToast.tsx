@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { ToastContainer } from '../components/Toast';
 import type { Toast, ToastType } from '../components/Toast';
 

@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Gallery, UploadZone, GlobalErrorBoundary, Toolbar } from './components';
 import { SyncStatus } from './components/SyncStatus';
+import { UserMenu } from './components/UserMenu';
+import { AuthGuard } from './components/AuthGuard';
+import { AuthProvider } from './hooks/useAuth';
 import { ToastProvider } from './hooks/useToast';
 import { useImages } from './hooks/useImages';
 import { useUpload } from './hooks/useUpload';
 import { useCaptionGeneration } from './hooks/useCaptionGeneration';
+import { useAuth } from './hooks/useAuth';
 
 // Calculate stats for display
 function calculateStats(images: any[]) {
@@ -19,9 +23,15 @@ function calculateStats(images: any[]) {
 }
 
 function AppContent() {
+  const { user } = useAuth();
   const { images, batchDeleteImages } = useImages();
   const { uploadFiles, isUploading, overallProgress } = useUpload();
   const { isGenerating } = useCaptionGeneration();
+  
+  // Check if user is authenticated
+  if (!user) {
+    return null; // Don't render content if not authenticated
+  }
   
   // Local state
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
@@ -97,6 +107,41 @@ function AppContent() {
                 </div>
               </div>
             </div>
+            
+            {/* User Menu */}
+            <UserMenu />
+            
+            {/* Temporary Migration Button */}
+            <button
+              onClick={async () => {
+                try {
+                  const { collection, getDocs } = await import('firebase/firestore');
+                  const { db } = await import('./services/firebase');
+                  const { getAuth } = await import('firebase/auth');
+                  
+                  // Get current user from Firebase Auth directly
+                  const auth = getAuth();
+                  const currentUser = auth.currentUser;
+                  
+                  const snapshot = await getDocs(collection(db, 'images'));
+                  console.log('📊 Old images collection has', snapshot.docs.length, 'documents');
+                  
+                  if (currentUser?.uid) {
+                    const userSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'images'));
+                    console.log('👤 User collection has', userSnapshot.docs.length, 'documents');
+                    alert(`Found ${snapshot.docs.length} images in old collection and ${userSnapshot.docs.length} in your user collection. Use the "Migrate Images" button to claim the old ones!`);
+                  } else {
+                    alert(`Found ${snapshot.docs.length} images in the old collection. Sign in first, then use the "Migrate Images" button to claim them!`);
+                  }
+                } catch (error) {
+                  console.error('❌ Failed to read collections:', error);
+                  alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg text-sm font-medium shadow-lg transition-all duration-200 hover:shadow-xl"
+            >
+              Check Collections
+            </button>
           
             {/* Sync Status */}
             <SyncStatus className="flex-shrink-0" />
@@ -364,9 +409,13 @@ function AppContent() {
 function App() {
   return (
     <GlobalErrorBoundary>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <AuthGuard>
+            <AppContent />
+          </AuthGuard>
+        </ToastProvider>
+      </AuthProvider>
     </GlobalErrorBoundary>
   );
 }

@@ -4,12 +4,14 @@ import { ImageService } from '../services/imageService';
 import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useSync } from './useSync';
 import { useCrossTabSync } from './useCrossTabSync';
+import { useAuth } from './useAuth';
 
 /**
  * Hook for managing images with real-time updates, synchronization, and performance monitoring
  * Simplified version without authentication - works directly with 'images' collection
  */
 export function useImages() {
+  const { user } = useAuth();
   const [images, setImages] = useState<ImageDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,18 +58,23 @@ export function useImages() {
     const shouldSubscribe = import.meta.env.DEV ? true : (isOnline && isConnected);
     
     console.log('🔍 useImages setup - isOnline:', isOnline, 'isConnected:', isConnected, 'shouldSubscribe:', shouldSubscribe);
-    console.log('🔍 useImages: Using simple collection path: images');
+    console.log('🔍 useImages: Using user-specific collection path for user:', user?.uid);
     
-    if (shouldSubscribe) {
-      console.log('📡 Setting up Firestore subscription for collection: images');
+    if (shouldSubscribe && user?.uid) {
+      console.log('📡 Setting up Firestore subscription for user:', user.uid);
+      console.log('📡 Connection status:', { isOnline, isConnected, shouldSubscribe });
       
       const setupSubscription = () => {
         console.log('🔄 setupSubscription called, retry count:', retryCount);
-        unsubscribeFirestore = ImageService.subscribeToImagesSimple(
+        console.log('🔄 Calling ImageService.subscribeToImages for user:', user.uid);
+        
+        unsubscribeFirestore = ImageService.subscribeToImages(
+          user.uid,
           (updatedImages) => {
             startMeasurement();
-            console.log('📊 Firestore subscription received', updatedImages.length, 'images from simple collection');
-            console.log('📊 Image details:', updatedImages.map(img => ({ id: img.id, filename: img.filename, status: img.status })));
+            console.log('📊 Firestore subscription received', updatedImages.length, 'images from user collection');
+            console.log('📊 Image details:', updatedImages.map(img => ({ id: img.id, filename: img.id, status: img.status })));
+            console.log('📊 Full updatedImages array:', updatedImages);
             
             // Track if we've ever had images
             if (updatedImages.length > 0) {
@@ -94,7 +101,7 @@ export function useImages() {
             // If we've exhausted retries and still have no images, try manual fetch as last resort
             if (import.meta.env.DEV && updatedImages.length === 0 && retryCount >= maxRetries) {
               console.log('🔄 Max retries reached, attempting manual fetch as last resort...');
-              ImageService.getImagesSimple().then(manualImages => {
+              ImageService.getImages(user.uid).then(manualImages => {
                 console.log('🔍 Manual fetch found', manualImages.length, 'images');
                 if (manualImages.length > 0) {
                   setImages(manualImages);
@@ -210,28 +217,56 @@ export function useImages() {
 
   // Upload image with error handling and cross-tab sync
   const uploadImage = useCallback(async (file: File): Promise<ImageDoc | null> => {
+    console.log('🔍 uploadImage called with file:', file.name, 'size:', file.size);
+    console.log('🔍 Current user state:', user);
+    
+    if (!user?.uid) {
+      const errorMsg = 'You must be signed in to upload images';
+      console.error('❌ Upload blocked:', errorMsg);
+      setError(errorMsg);
+      return null;
+    }
+
     try {
+      console.log('🚀 Starting authenticated upload for user:', user.uid);
+      console.log('🚀 File details:', { name: file.name, size: file.size, type: file.type });
+      
       const imageDoc = await ImageService.withRetry(() => 
-        ImageService.uploadImageSimple(file)
+        ImageService.uploadImage(file, user.uid)
       );
+      
+      console.log('✅ Upload completed, imageDoc:', imageDoc);
       
       // Broadcast to other tabs
       if (imageDoc) {
+        console.log('📡 Broadcasting image creation to other tabs');
         broadcastImageCreate(imageDoc);
+      } else {
+        console.warn('⚠️ No imageDoc returned from upload');
       }
       
       return imageDoc;
     } catch (error) {
       console.error('❌ Failed to upload image:', error);
+      console.error('❌ Error details:', { 
+        name: error.name, 
+        message: error.message, 
+        stack: error.stack 
+      });
       setError(error instanceof Error ? error.message : 'Upload failed');
       return null;
     }
-  }, [broadcastImageCreate]);
+  }, [user?.uid, broadcastImageCreate]);
 
   // Update image with error handling and cross-tab sync
   const updateImage = useCallback(async (imageId: string, updates: Partial<ImageDoc>): Promise<boolean> => {
+    if (!user?.uid) {
+      setError('You must be signed in to update images');
+      return false;
+    }
+
     try {
-      await ImageService.updateImageSimple(imageId, updates);
+      await ImageService.updateImageSimple(imageId, updates, user.uid);
       
       // Broadcast to other tabs
       const updatedImage = images.find(img => img.id === imageId);
@@ -245,12 +280,17 @@ export function useImages() {
       setError(error instanceof Error ? error.message : 'Update failed');
       return false;
     }
-  }, [images, broadcastImageUpdate]);
+  }, [user?.uid, images, broadcastImageUpdate]);
 
   // Delete image with error handling and cross-tab sync
   const deleteImage = useCallback(async (imageId: string): Promise<boolean> => {
+    if (!user?.uid) {
+      setError('You must be signed in to delete images');
+      return false;
+    }
+
     try {
-      await ImageService.deleteImageSimple(imageId);
+      await ImageService.deleteImageSimple(imageId, user.uid);
       
       // Broadcast to other tabs
       broadcastImageDelete(imageId);
@@ -261,7 +301,7 @@ export function useImages() {
       setError(error instanceof Error ? error.message : 'Delete failed');
       return false;
     }
-  }, [broadcastImageDelete]);
+  }, [user?.uid, broadcastImageDelete]);
 
   // Batch delete images
   const batchDeleteImages = useCallback(async (imageIds: string[]): Promise<{

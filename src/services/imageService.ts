@@ -45,25 +45,38 @@ export class ImageService {
    * Upload an image file to Firebase Storage and create a Firestore document
    */
   static async uploadImage(file: File, userId: string): Promise<ImageDoc> {
+    console.log('🔄 ImageService.uploadImage called with:', { fileName: file.name, userId });
+    
     return await executeWithRecovery(
       async () => {
+        console.log('🔄 Starting upload process...');
+        
         // Generate unique filename with timestamp
         const timestamp = Date.now();
         const filename = `${timestamp}_${file.name}`;
         const storagePath = `uploads/${userId}/${timestamp}/${filename}`;
         
+        console.log('📁 Storage path:', storagePath);
+        console.log('📁 Filename:', filename);
+        
         // Upload to Firebase Storage with timeout
         const storageRef = ref(storage, storagePath);
+        console.log('🔥 Starting Firebase Storage upload...');
+        
         const uploadResult: UploadResult = await withTimeout(
           uploadBytes(storageRef, file),
           60000, // 60 second timeout for uploads
           `Upload timeout for file: ${filename}`
         );
         
-        // Get download URL
-        const downloadURL = await getDownloadURL(uploadResult.ref);
+        console.log('✅ Firebase Storage upload complete:', uploadResult.ref.fullPath);
         
-        // Create Firestore document
+        // Get download URL
+        console.log('🔗 Getting download URL...');
+        const downloadURL = await getDownloadURL(uploadResult.ref);
+        console.log('🔗 Download URL obtained:', downloadURL);
+        
+        // Create Firestore document - filter out undefined values
         const imageData = {
           filename,
           storagePath: uploadResult.ref.fullPath,
@@ -71,31 +84,56 @@ export class ImageService {
           status: 'pending' as const,
           candidates: [],
           selectedIndex: null,
-          selectedTextOverride: undefined,
+          // Only include selectedTextOverride if it has a value
+          ...(undefined !== undefined && { selectedTextOverride: undefined }),
           createdAt: timestamp,
           updatedAt: timestamp
         };
+        
+        // Clean the data to remove any undefined values
+        const cleanImageData = Object.fromEntries(
+          Object.entries(imageData).filter(([_, value]) => value !== undefined)
+        );
+        
+        console.log('🧹 Cleaned image data:', cleanImageData);
         
         const collectionPath = `users/${userId}/${ImageService.COLLECTION_NAME}`;
         console.log('📝 Creating Firestore document at:', collectionPath, 'for user:', userId);
         console.log('📄 Document data:', imageData);
         
-        const docRef = await addDoc(
-          collection(db, 'users', userId, ImageService.COLLECTION_NAME),
-          imageData
-        );
+        let imageDoc: ImageDoc;
         
-        console.log('✅ Created Firestore document:', docRef.id, 'at path:', docRef.path);
-        console.log('🔍 Full document reference:', {
-          id: docRef.id,
-          path: docRef.path,
-          parent: docRef.parent.path
-        });
-        
-        const imageDoc = {
-          id: docRef.id,
-          ...imageData
-        };
+        try {
+          console.log('🔥 Attempting to create Firestore document...');
+          console.log('🔥 Collection path:', collectionPath);
+          console.log('🔥 Using db instance:', !!db);
+          
+          const docRef = await addDoc(
+            collection(db, 'users', userId, ImageService.COLLECTION_NAME),
+            cleanImageData
+          );
+          
+          console.log('✅ Created Firestore document:', docRef.id, 'at path:', docRef.path);
+          console.log('🔍 Full document reference:', {
+            id: docRef.id,
+            path: docRef.path,
+            parent: docRef.parent.path
+          });
+          
+          imageDoc = {
+            id: docRef.id,
+            ...imageData
+          };
+
+          console.log('🎉 Final imageDoc created:', imageDoc);
+        } catch (firestoreError: any) {
+          console.error('❌ Firestore document creation FAILED:', firestoreError);
+          console.error('❌ Error type:', firestoreError.constructor.name);
+          console.error('❌ Error message:', firestoreError.message);
+          console.error('❌ Error code:', firestoreError.code);
+          console.error('❌ Error details:', firestoreError);
+          throw firestoreError;
+        }
 
         // Store in offline storage for sync
         try {
@@ -777,7 +815,8 @@ export class ImageService {
    */
   static async updateImageSimple(
     imageId: string, 
-    updates: Partial<Omit<ImageDoc, 'id' | 'createdAt'>>
+    updates: Partial<Omit<ImageDoc, 'id' | 'createdAt'>>,
+    userId?: string
   ): Promise<void> {
     return await executeWithRecovery(
       async () => {
@@ -786,12 +825,24 @@ export class ImageService {
           updatedAt: Date.now()
         };
 
-        // Update Firestore document
-        const docRef = doc(db, 'images', imageId);
+        // Update Firestore document - use user-specific collection if available
+        let docRef;
+        if (userId) {
+          docRef = doc(db, 'users', userId, 'images', imageId);
+          console.log(`🔄 Updating image ${imageId} in user collection: users/${userId}/images`);
+        } else {
+          docRef = doc(db, 'images', imageId);
+          console.log(`🔄 Updating image ${imageId} in old collection: images`);
+        }
+        
         await updateDoc(docRef, updateData);
 
         // Invalidate cache
-        imageCache.delete('images:simple');
+        if (userId) {
+          imageCache.delete(`images:${userId}`);
+        } else {
+          imageCache.delete('images:simple');
+        }
       },
       'image-update-simple',
       {
@@ -799,7 +850,7 @@ export class ImageService {
           maxRetries: 2,
           baseDelay: 500
         },
-        metadata: { imageId, updateFields: Object.keys(updates) }
+        metadata: { imageId, updateFields: Object.keys(updates), userId }
       }
     );
   }
@@ -807,11 +858,19 @@ export class ImageService {
   /**
    * Delete an image from simple collection (no authentication)
    */
-  static async deleteImageSimple(imageId: string): Promise<void> {
+  static async deleteImageSimple(imageId: string, userId?: string): Promise<void> {
     return await executeWithRecovery(
       async () => {
         // Get the document data to find storage path
-        const docRef = doc(db, 'images', imageId);
+        let docRef;
+        if (userId) {
+          docRef = doc(db, 'users', userId, 'images', imageId);
+          console.log(`🗑️ Deleting image ${imageId} from user collection: users/${userId}/images`);
+        } else {
+          docRef = doc(db, 'images', imageId);
+          console.log(`🗑️ Deleting image ${imageId} from old collection: images`);
+        }
+        
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
@@ -843,7 +902,11 @@ export class ImageService {
         await deleteDoc(docRef);
         
         // Invalidate cache
-        imageCache.delete('images:simple');
+        if (userId) {
+          imageCache.delete(`images:${userId}`);
+        } else {
+          imageCache.delete('images:simple');
+        }
       },
       'image-delete-simple',
       {
@@ -851,7 +914,7 @@ export class ImageService {
           maxRetries: 2,
           baseDelay: 1000
         },
-        metadata: { imageId }
+        metadata: { imageId, userId }
       }
     );
   }
@@ -909,20 +972,34 @@ export class ImageService {
   }
 
   /**
-   * Get a single image by ID from simple collection (no authentication)
+   * Get a single image by ID from user-specific collection
    */
-  static async getImageById(imageId: string): Promise<ImageDoc | null> {
+  static async getImageById(imageId: string, userId?: string): Promise<ImageDoc | null> {
     try {
-      const docRef = doc(db, 'images', imageId);
+      let docRef;
+      
+      if (userId) {
+        // Use user-specific collection
+        docRef = doc(db, 'users', userId, 'images', imageId);
+        console.log(`🔍 Looking for image ${imageId} in user collection: users/${userId}/images`);
+      } else {
+        // Fallback to old collection for backward compatibility
+        docRef = doc(db, 'images', imageId);
+        console.log(`🔍 Looking for image ${imageId} in old collection: images`);
+      }
+      
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return {
+        const imageDoc = {
           id: docSnap.id,
           ...docSnap.data()
         } as ImageDoc;
+        console.log(`✅ Found image ${imageId} in ${docRef.path}`);
+        return imageDoc;
       }
       
+      console.log(`❌ Image ${imageId} not found in ${docRef.path}`);
       return null;
     } catch (error) {
       console.error('❌ Failed to get image by ID:', error);
@@ -933,17 +1010,41 @@ export class ImageService {
   /**
    * Update image candidates (captions) in simple collection
    */
-  static async updateImageCandidates(imageId: string, candidates: any[]): Promise<void> {
+  static async updateImageCandidates(imageId: string, candidates: any[], userId?: string): Promise<void> {
     try {
-      const docRef = doc(db, 'images', imageId);
+      // Filter out any candidates with undefined values to prevent Firestore errors
+      const cleanCandidates = candidates.map(candidate => {
+        const clean: any = {};
+        Object.keys(candidate).forEach(key => {
+          if (candidate[key] !== undefined) {
+            clean[key] = candidate[key];
+          }
+        });
+        return clean;
+      });
+
+      // Use user-specific collection if available
+      let docRef;
+      if (userId) {
+        docRef = doc(db, 'users', userId, 'images', imageId);
+        console.log(`🔄 Updating candidates for image ${imageId} in user collection: users/${userId}/images`);
+      } else {
+        docRef = doc(db, 'images', imageId);
+        console.log(`🔄 Updating candidates for image ${imageId} in old collection: images`);
+      }
+      
       await updateDoc(docRef, {
-        candidates,
-        status: candidates.length > 0 ? 'complete' : 'pending',
+        candidates: cleanCandidates,
+        status: cleanCandidates.length > 0 ? 'complete' : 'pending',
         updatedAt: Date.now()
       });
       
       // Invalidate cache
-      imageCache.delete('images:simple');
+      if (userId) {
+        imageCache.delete(`images:${userId}`);
+      } else {
+        imageCache.delete('images:simple');
+      }
       console.log('✅ Updated image candidates for:', imageId);
     } catch (error) {
       console.error('❌ Failed to update image candidates:', error);

@@ -27,7 +27,7 @@ export function Toolbar({
   selectionMode = false,
   onToggleSelectionMode
 }: ToolbarProps) {
-  const { stats, toggleDownloadButton, showDownloadButton } = useExport(images);
+  const { stats } = useExport(images);
   const toolbarId = useRef(generateId('toolbar'));
   const statsId = useRef(generateId('stats'));
   const selectAllId = useRef(generateId('select-all'));
@@ -160,25 +160,8 @@ export function Toolbar({
           </>
         )}
 
-        {/* Developer Toggle for Download Button */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="border-t sm:border-t-0 sm:border-l border-gray-600/50 pt-3 sm:pt-0 sm:pl-4">
-            <button
-              onClick={() => toggleDownloadButton()}
-              className="px-3 py-2 text-xs bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800 border border-gray-600/50"
-              aria-label={`Toggle download button visibility. Currently ${showDownloadButton ? 'enabled' : 'disabled'}`}
-              aria-describedby="dev-toggle-help"
-            >
-              DL: {showDownloadButton ? 'ON' : 'OFF'}
-            </button>
-            <div id="dev-toggle-help" className="sr-only">
-              Development tool to toggle download button visibility using localStorage show_dl_button setting
-            </div>
-          </div>
-        )}
-
-        {/* Export Button */}
-        <ExportButton images={images} />
+        {/* Export Button - Always Visible */}
+        <ExportButton images={images} showDownloadButton={true} />
       </div>
     </div>
   );

@@ -1,9 +1,6 @@
 // Gallery components
 export { Gallery } from './Gallery';
 export { GalleryGrid } from './GalleryGrid';
-export { ImageCard } from './ImageCard';
-export { ImageErrorBoundary } from './ImageErrorBoundary';
-export { LazyImage } from './LazyImage';
 export { VirtualizedGallery } from './VirtualizedGallery';
 
 // UI components
@@ -15,8 +12,21 @@ export { UploadZone } from './UploadZone';
 
 // Error handling components
 export { GlobalErrorBoundary } from './GlobalErrorBoundary';
+export { ImageErrorBoundary } from './ImageErrorBoundary';
 export { ToastContainer } from './Toast';
-export type { Toast, ToastType } from './Toast';
+
+// Image components
+export { ImageCard } from './ImageCard';
+export { LazyImage } from './LazyImage';
 
 // Sync components
 export { SyncStatus } from './SyncStatus';
+
+// User caption component
+export { UserCaptionInput } from './UserCaptionInput';
+
+// Auth components
+export { LoginForm } from './LoginForm';
+export { SignupForm } from './SignupForm';
+export { AuthGuard } from './AuthGuard';
+export { UserMenu } from './UserMenu';

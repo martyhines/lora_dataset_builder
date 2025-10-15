@@ -7,6 +7,7 @@ import { processImages } from '../utils/imageProcessing';
 import type { ImageProcessingOptions, ProcessedImageResult } from '../utils/imageProcessing';
 import { useUploadPerformanceMonitoring } from './usePerformanceMonitoring';
 import { useCaptionGeneration } from './useCaptionGeneration';
+import { useAuth } from './useAuth';
 
 /**
  * Upload state for individual files
@@ -36,6 +37,7 @@ export interface UploadOptions {
  * Hook for managing batch file uploads with preprocessing
  */
 export function useUpload(options: UploadOptions = {}) {
+  const { user } = useAuth();
   const [uploadStates, setUploadStates] = useState<Map<string, FileUploadState>>(new Map());
   const [isUploading, setIsUploading] = useState(false);
 
@@ -181,7 +183,7 @@ export function useUpload(options: UploadOptions = {}) {
 
 
               // Upload file and create Firestore document
-              const createdDoc = await ImageService.uploadImageSimple(state.file);
+              const createdDoc = await ImageService.uploadImage(state.file, user!.uid);
               
               // Automatically trigger caption generation for the uploaded image
               console.log('🎯 Starting automatic caption generation for:', createdDoc.id);

@@ -114,7 +114,7 @@ export const PROVIDERS = {
 // Add to the provider list
 export const AVAILABLE_PROVIDERS = [
   'openai:gpt-4o-mini',
-  'gemini:gemini-1.5-flash',
+  'gemini:gemini-2.0-flash',
   'your-provider:model-name', // Add this line
 ] as const;
 ```

@@ -54,7 +54,7 @@ Get list of available vision providers.
     {
       "id": "gemini",
       "name": "Google Gemini Vision",
-      "modelId": "gemini:gemini-1.5-flash",
+      "modelId": "gemini:gemini-2.0-flash",
       "enabled": true,
       "capabilities": ["image-to-text"],
       "maxImageSize": 20971520,
@@ -169,7 +169,7 @@ Generate captions from multiple providers in parallel.
       "provider": "gemini",
       "success": true,
       "result": {
-        "modelId": "gemini:gemini-1.5-flash",
+        "modelId": "gemini:gemini-2.0-flash",
         "caption": "A dog playing with a frisbee outdoors",
         "latency": 980,
         "tokensUsed": 12
@@ -435,7 +435,7 @@ interface OpenAIOptions {
 
 ### Google Gemini Vision
 
-- **Model**: `gemini-1.5-flash`
+- **Model**: `gemini-2.0-flash`
 - **Max image size**: 20MB
 - **Supported formats**: JPEG, PNG, WebP
 - **Rate limits**: 300 requests per minute

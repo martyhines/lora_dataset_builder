@@ -3,7 +3,7 @@ import { BaseVisionProvider } from './base';
 import { CaptionResult } from '../types';
 
 export class GeminiProvider extends BaseVisionProvider {
-  id = 'google:gemini-1.5-flash';
+  id = 'google:gemini-2.0-flash';
   private client: GoogleGenerativeAI;
 
   constructor(apiKey: string, timeout?: number, maxRetries?: number) {
@@ -37,7 +37,7 @@ export class GeminiProvider extends BaseVisionProvider {
           throw this.createError('URL does not point to a valid image', 400);
         }
 
-        const model = this.client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         const prompt = options.systemPrompt || 'Describe this image in detail for a machine learning dataset. Focus on the main subject, setting, colors, and any notable features. Keep the description concise but informative.';
 

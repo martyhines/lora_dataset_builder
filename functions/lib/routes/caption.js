@@ -30,7 +30,7 @@ router.post('/batch', rateLimit_1.captionRateLimit, validation_1.validateCaption
             // Map short names to full provider IDs
             const providerMap = {
                 'openai': 'openai:gpt-4o-mini',
-                'gemini': 'google:gemini-1.5-flash'
+                'gemini': 'google:gemini-2.0-flash'
             };
             providerIds = providers.split(',').map(p => {
                 const mapped = providerMap[p.trim()];
@@ -59,7 +59,7 @@ router.post('/:provider', rateLimit_1.captionRateLimit, validation_1.validatePro
         // Map provider parameter to full provider ID
         const providerMap = {
             'openai': 'openai:gpt-4o-mini',
-            'gemini': 'google:gemini-1.5-flash'
+            'gemini': 'google:gemini-2.0-flash'
         };
         const providerId = providerMap[provider];
         if (!providerId) {

@@ -30,7 +30,12 @@ export class CaptionProxyService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_CAPTION_PROXY_URL || 'http://localhost:5001/lora-dataset-builder/us-central1/captionProxy';
+    // Production Firebase Functions URL
+    const PRODUCTION_URL = 'https://us-central1-lora-dataset-builder-prod.cloudfunctions.net/captionProxy';
+    // Development URL (for local testing)
+    const DEVELOPMENT_URL = 'http://localhost:5001/lora-dataset-builder/us-central1/captionProxy';
+    
+    this.baseUrl = import.meta.env.PROD ? PRODUCTION_URL : DEVELOPMENT_URL;
   }
 
   async getAvailableProviders(): Promise<string[]> {
@@ -42,10 +47,11 @@ export class CaptionProxyService {
         throw new Error(data.message || 'Failed to get providers');
       }
       
-      return (data as any).providers?.map((p: any) => p.id) || [];
+      return (data as any).providers?.map((p: any) => p.id) || ['openai', 'gemini'];
     } catch (error) {
       console.error('Failed to get available providers:', error);
-      throw error;
+      // Fallback to default providers
+      return ['openai', 'gemini'];
     }
   }
 
@@ -107,42 +113,16 @@ export class CaptionProxyService {
     }
   }
 
-  async checkHealth(): Promise<{ status: string; providers: any[] }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/caption/health`);
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Health check failed');
-      }
-      
-      return {
-        status: data.status,
-        providers: data.providers || []
-      };
-    } catch (error) {
-      console.error('Health check failed:', error);
-      throw error;
-    }
-  }
-
-  // Convert CaptionResult to CaptionCandidate format used by the app
-  resultToCandidate(result: CaptionResult): CaptionCandidate {
-    return {
+  resultsToCandidate(results: CaptionResult[]): CaptionCandidate[] {
+    return results.map(result => ({
       modelId: result.modelId,
       caption: result.caption,
       createdAt: Date.now(),
       latencyMs: result.latency,
       tokensUsed: result.tokensUsed,
-      error: result.error
-    };
-  }
-
-  // Batch convert results to candidates
-  resultsToCandidate(results: CaptionResult[]): CaptionCandidate[] {
-    return results.map(result => this.resultToCandidate(result));
+      error: result.error || undefined
+    }));
   }
 }
 
-// Export an instance of the service
 export const captionProxyService = new CaptionProxyService();
