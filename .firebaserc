@@ -1,7 +1,0 @@
-{
-  "projects": {
-    "default": "lora-dataset-builder-dev",
-    "development": "lora-dataset-builder-dev",
-    "production": "lora-dataset-builder-prod"
-  }
-}

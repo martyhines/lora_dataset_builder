@@ -28,7 +28,7 @@ fi
 
 # Build the application
 echo "📦 Building application..."
-npm run build
+npx vite build --mode production
 
 # Check if build was successful
 if [ ! -d "dist" ]; then
@@ -46,6 +46,8 @@ git checkout -b gh-pages 2>/dev/null || git checkout gh-pages
 echo "🧹 Cleaning gh-pages branch..."
 git rm -rf . || true
 git clean -fdx
+# Don't remove dist directory
+git clean -fdx --exclude=dist
 
 # Copy dist contents to root
 echo "📁 Copying build files..."
